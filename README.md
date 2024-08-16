@@ -23,6 +23,6 @@ If you want to check the status of the daemon, you can see a `syslog` which is l
 
 It's just a toy program, so don't expect too much about functionality!
 
-But I think it has some interesting topics, like scrolling up the screen, displaying bitmap fonts in monochrome etc...
+But I think it has some interesting topics, like displaying bitmap fonts in monochrome screen etc...
 
 By the way, sorry for dirty code XD
