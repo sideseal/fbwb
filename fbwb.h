@@ -14,12 +14,14 @@
 # include <time.h>
 # include <unistd.h>
 
-# include "font8x8.h"
+# include "font16x16.h"
 
-# define SUCCESS 1
-# define FAILURE 0
-# define TRUE 1
-# define FALSE 0
+# define SUCCESS		1
+# define FAILURE		0
+# define TRUE			1
+# define FALSE			0
+# define FONT_WIDTH		16
+# define FONT_HEIGHT	16
 
 typedef struct s_fb
 {
@@ -27,7 +29,7 @@ typedef struct s_fb
 	unsigned char*				local_buf;
 	int							fd;
 	struct fb_var_screeninfo	info;
-	unsigned int				size;
+	size_t						size;
 } t_fb;
 
 #endif
