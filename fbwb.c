@@ -2,60 +2,18 @@
 
 volatile sig_atomic_t	running = TRUE;
 
-void	log_message(char const* msg)
-{
-	syslog(LOG_INFO, "%s", msg);
-}
-
 void	error_exit(char const* msg)
 {
-	fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+	if (errno != 0)
+	{
+		fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+	}
+	else
+	{
+		fprintf(stderr, "%s\n", msg);
+	}
+
 	exit(EXIT_FAILURE);
-}
-
-int	daemonize(void)
-{
-	pid_t	pid;
-
-	pid = fork();
-	if (pid < 0)
-	{
-		return FAILURE;
-	}
-
-	if (pid > 0)
-	{
-		exit(EXIT_SUCCESS);
-	}
-
-	if (setsid() < 0)
-	{
-		return FAILURE;
-	}
-
-	signal(SIGCHLD, SIG_IGN);
-	signal(SIGHUP, SIG_IGN);
-
-	pid = fork();
-	if (pid < 0)
-	{
-		return FAILURE;
-	}
-
-	if (pid > 0)
-	{
-		exit(EXIT_SUCCESS);
-	}
-
-	chdir("/");
-
-	printf("\nfbwb daemon is starting...\n");
-
-	close(STDIN_FILENO);
-	close(STDOUT_FILENO);
-	close(STDERR_FILENO);
-
-	return SUCCESS;
 }
 
 void	signal_handler(int sig)
@@ -64,7 +22,6 @@ void	signal_handler(int sig)
 	{
 		case SIGTERM:
 		case SIGINT:
-			log_message("fbwb daemon is stopping...");
 			running = FALSE;
 			break;
 		default:
@@ -248,6 +205,11 @@ void	display_end_screen(t_fb* fb)
 	unsigned int		x;
 	unsigned int		y;
 
+	if (!fb)
+	{
+		return;
+	}
+
 	x = 0;
 	y = 0;
 	draw_background(fb);
@@ -350,31 +312,17 @@ int	main(int argc, char* argv[])
 		memset(fb.local_buf, 0, fb.size);
 	}
 
-	openlog("fbwb - display weather board with framebuffer", LOG_PID,
-			LOG_DAEMON);
-
 	signal(SIGTERM, signal_handler);
 	signal(SIGINT, signal_handler);
-
-	if (!daemonize())
-	{
-		log_message("Failed to daemonize program\n");
-		goto end;
-	}
-	else
-	{
-		log_message("fbwb daemon is starting...");
-	}
 
 	if (!display_sensor_info(&fb))
 	{
 		display_end_screen(&fb);
-		log_message("Failed to display info\n");
+		clean_up(&fb);
+		error_exit("Failed to display info");
 	}
 
-end:
 	clean_up(&fb);
-	closelog();
 
 	return 0;
 }

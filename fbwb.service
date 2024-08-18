@@ -1,0 +1,9 @@
+[Unit]
+Description=fbwb - display weather board info with framebuffer
+
+[Service]
+User=root
+ExecStart=/usr/local/sbin/fbwb
+
+[Install]
+WantedBy=local-fs.target
