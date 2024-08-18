@@ -2,7 +2,7 @@
 
 ![demo video](https://www.youtube.com/watch?v=A4CuWbXQJcw)
 
-Display humidity & temperature through framebuffer.
+Display humidity & temperature through framebuffer. (w/ Weather-Board-Zero)
 
 You need to compile the Linux kernel with framebuffer options enabled and connect OLED which is portable with ssd1306 / ssd1315.
 
