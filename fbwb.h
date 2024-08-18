@@ -1,6 +1,7 @@
 #ifndef FBWB_H
 # define FBWB_H
 
+# include <errno.h>
 # include <fcntl.h>
 # include <linux/fb.h>
 # include <stdio.h>

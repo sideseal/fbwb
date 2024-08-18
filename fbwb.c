@@ -9,7 +9,7 @@ void	log_message(char const* msg)
 
 void	error_exit(char const* msg)
 {
-	write(STDERR_FILENO, msg, strlen(msg));
+	fprintf(stderr, "%s: %s\n", msg, strerror(errno));
 	exit(EXIT_FAILURE);
 }
 
@@ -79,31 +79,40 @@ void	clean_up(t_fb* fb)
 	close(fb->fd);
 }
 
-void	write_char_16x16(char* bitmap, unsigned int xpos, unsigned int ypos, t_fb* fb)
+void	write_char_16x16(char* bitmap, unsigned int xpos, unsigned int ypos,
+						 t_fb* fb)
 {
-	int	x;
-	int	y;
-	int	set;
+	unsigned int	x;
+	unsigned int	y;
+	unsigned int	location;
+	unsigned short	set;
+	unsigned short	row;
 
-	for (y = 0; y < 16; y++)
+	if (!bitmap || !fb)
 	{
-		unsigned short row = (bitmap[y * 2] << 8) | bitmap[y * 2 + 1];
+		return;
+	}
 
-		for (x = 0; x < 16; x++)
+	for (y = 0; y < FONT_HEIGHT; y++)
+	{
+		row = (bitmap[y * 2] << 8) | bitmap[y * 2 + 1];
+
+		for (x = 0; x < FONT_WIDTH; x++)
 		{
 			set = row & (1 << (15 - x));
 			if (set)
 			{
-				int location = ((xpos + x) + ((ypos + y) * fb->info.xres));
+				location = ((xpos + x) + ((ypos + y) * fb->info.xres));
 				fb->local_buf[location / 8] |= (1 << (location % 8));
 			}
 		}
 	}
 }
 
-void	draw_sentence(char* sentence, t_fb* fb, unsigned int* xpos, unsigned int* ypos)
+void	write_sentence(char* sentence, unsigned int* xpos, unsigned int* ypos,
+					  t_fb* fb)
 {
-	if (!sentence)
+	if (!sentence || !fb)
 	{
 		return;
 	}
@@ -129,7 +138,7 @@ void	draw_sentence(char* sentence, t_fb* fb, unsigned int* xpos, unsigned int* y
 			break;
 		}
 
-		write_char_16x16(font16x16_basic[(unsigned char)*sentence++], *xpos, *ypos, fb);
+		write_char_16x16(font16x16_basic[(char)*sentence++], *xpos, *ypos, fb);
 		*xpos += FONT_WIDTH;
 	}
 }
@@ -139,11 +148,16 @@ void	display(char** result, t_fb* fb)
 	unsigned int	xpos;
 	unsigned int	ypos;
 
+	if (!result || !fb)
+	{
+		return;
+	}
+
 	xpos = 0;
 	ypos = 0;
 	while (*result)
 	{
-		draw_sentence(*result, fb, &xpos, &ypos);
+		write_sentence(*result, &xpos, &ypos, fb);
 		result++;
 	}
 
@@ -200,6 +214,11 @@ int	draw_background(t_fb* fb)
 	unsigned int	bytes_per_pixel;
 	unsigned int	location;
 
+	if (!fb)
+	{
+		return FAILURE;
+	}
+
 	bytes_per_pixel = (fb->info.bits_per_pixel + 7) / 8;
 
 	for (i = 0; i < fb->info.yres; i++)
@@ -232,7 +251,7 @@ void	display_end_screen(t_fb* fb)
 	x = 0;
 	y = 0;
 	draw_background(fb);
-	draw_sentence(msg, fb, &x, &y);
+	write_sentence(msg, &x, &y, fb);
 	memcpy(fb->frame_buf, fb->local_buf, fb->size);
 }
 
@@ -295,22 +314,20 @@ int	main(int argc, char* argv[])
 {
 	t_fb	fb;
 
-	if (argc < 2 || argc > 2)
+	if (argc != 2)
 	{
-		error_exit("Usage: ./fbwb <framebuffer path>\n");
+		error_exit("Usage: ./fbwb <framebuffer path>");
 	}
-
-	openlog("fbwb - display weather board with framebuffer", LOG_PID, LOG_DAEMON);
 
 	fb.fd = open(argv[1], O_RDWR);
 	if (fb.fd < 0)
 	{
-		error_exit("Failed to open framebuffer\n");
+		error_exit("Failed to open framebuffer");
 	}
 
 	if (ioctl(fb.fd, FBIOGET_VSCREENINFO, &(fb.info)) < 0)
 	{
-		error_exit("Failed to get framebuffer info\n");
+		error_exit("Failed to get framebuffer info");
 	}
 
 	fb.size = fb.info.xres * fb.info.yres * fb.info.bits_per_pixel / 8;
@@ -318,7 +335,7 @@ int	main(int argc, char* argv[])
 	fb.frame_buf = mmap(0, fb.size, PROT_READ | PROT_WRITE, MAP_SHARED, fb.fd, 0);
 	if (fb.frame_buf == MAP_FAILED)
 	{
-		error_exit("Failed to map framebuffer\n");
+		error_exit("Failed to map framebuffer");
 	}
 	
 	fb.local_buf = malloc(fb.size);
@@ -326,12 +343,15 @@ int	main(int argc, char* argv[])
 	{
 		fb.local_buf = NULL;
 		clean_up(&fb);
-		error_exit("Failed to malloc local buffer\n");
+		error_exit("Failed to malloc local buffer");
 	}
 	else
 	{
 		memset(fb.local_buf, 0, fb.size);
 	}
+
+	openlog("fbwb - display weather board with framebuffer", LOG_PID,
+			LOG_DAEMON);
 
 	signal(SIGTERM, signal_handler);
 	signal(SIGINT, signal_handler);
@@ -350,7 +370,6 @@ int	main(int argc, char* argv[])
 	{
 		display_end_screen(&fb);
 		log_message("Failed to display info\n");
-		goto end;
 	}
 
 end:
