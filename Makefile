@@ -20,7 +20,7 @@ SERVICE_NAME = $(NAME).service
 SERVICE_USER = root
 SERVICE_PATH = /etc/systemd/system
 INSTALL_PATH = /usr/local/sbin
-FRAMEBUFFER_PATH= /dev/fb0
+FRAMEBUFFER_PATH= /dev/fb1
 
 %.o: %.c
 	$(COMPILE.c) $(OUTPUT_OPTION) $<

@@ -19,6 +19,8 @@ You need to connect the Weather-Board-Zero module to gather information about hu
 For me, I also used MULTIIO Training Board for ODROID-M1S, so maybe you need other gadgets to make this thing work as expected.
 (![MUITIIO](https://www.hardkernel.com/ko/shop/multi-i-o-training-board-for-m1s/))
 
+You can contol this program by `systemd`. `sudo make install` will automatically register program into `systemd`. You can also unregister the program by `sudo make uninstall` command.
+
 It's just a toy program, so don't expect too much about functionality!
 
 But I think it has some interesting topics, like displaying bitmap fonts in monochrome screen etc...
